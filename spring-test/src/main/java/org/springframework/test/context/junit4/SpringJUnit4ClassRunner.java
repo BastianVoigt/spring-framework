@@ -17,6 +17,7 @@
 package org.springframework.test.context.junit4;
 
 import java.lang.reflect.Method;
+import java.lang.ThreadLocal;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -97,7 +98,12 @@ public class SpringJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 		ReflectionUtils.makeAccessible(withRulesMethod);
 	}
 
-	private final TestContextManager testContextManager;
+	private final TheadLocal<TestContextManager> testContextManagers = new ThreadLocal<TestContextManager>() {
+		@Override
+		public TestContextManager initialValue() {
+			return new TestContextManager(getTestClass().getJavaClass());
+		}
+	};
 
 
 	/**
@@ -112,23 +118,14 @@ public class SpringJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 		if (logger.isDebugEnabled()) {
 			logger.debug("SpringJUnit4ClassRunner constructor called with [" + clazz + "].");
 		}
-		this.testContextManager = createTestContextManager(clazz);
 	}
 
-	/**
-	 * Creates a new {@link TestContextManager} for the supplied test class.
-	 * <p>Can be overridden by subclasses.
-	 * @param clazz the test class to be managed
-	 */
-	protected TestContextManager createTestContextManager(Class<?> clazz) {
-		return new TestContextManager(clazz);
-	}
 
 	/**
 	 * Get the {@link TestContextManager} associated with this runner.
 	 */
 	protected final TestContextManager getTestContextManager() {
-		return this.testContextManager;
+		return this.testContextManagers.get();
 	}
 
 	/**
